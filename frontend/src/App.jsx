@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { PROJECTS, SKILLS, TYPED_STRINGS } from './utils/data';
 
 function App() {
+  // UI state for navbar style, mobile menu, hero typing text, and form behavior.
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [typedText, setTypedText] = useState('');
@@ -14,6 +15,7 @@ function App() {
     message: '',
   });
 
+  // Toggle "scrolled" navbar style once the page is past 40px.
   useEffect(() => {
     const onScroll = () => setNavScrolled(window.scrollY > 40);
     onScroll();
@@ -21,6 +23,7 @@ function App() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // Reveal animations: hero items animate on load, other items animate when visible.
   useEffect(() => {
     const heroItems = document.querySelectorAll('.hero .reveal');
     const timer = window.setTimeout(() => {
@@ -49,6 +52,7 @@ function App() {
     };
   }, []);
 
+  // Typewriter effect for the hero subtitle.
   useEffect(() => {
     if (!TYPED_STRINGS.length) return undefined;
 
@@ -84,11 +88,13 @@ function App() {
     return () => window.clearTimeout(timeoutId);
   }, []);
 
+  // Generic controlled-input handler: updates the matching form field by name.
   const handleInputChange = (event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Basic submit flow: validate -> simulate request -> show success message.
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -127,9 +133,10 @@ function App() {
 
   return (
     <>
+      {/* Fixed navigation bar */}
       <nav className={`nav ${navScrolled ? 'scrolled' : ''}`} id="nav">
         <a href="#hero" className="nav__logo">
-          YN<span className="dot">.</span>
+          MERICOT<span className="dot">.</span>
         </a>
         <ul className="nav__links">
           <li>
@@ -157,6 +164,7 @@ function App() {
         </button>
       </nav>
 
+      {/* Full-screen mobile menu */}
       <div className={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`} id="mobileMenu">
         <ul>
           <li>
@@ -182,6 +190,7 @@ function App() {
         </ul>
       </div>
 
+      {/* Hero section */}
       <section className="hero" id="hero">
         <div className="hero__bg">
           <div className="hero__grid"></div>
@@ -192,7 +201,7 @@ function App() {
           <div className="hero__tag reveal">Available for work</div>
           <h1 className="hero__name reveal">
             <span className="hero__hi">Hi, I&apos;m</span>
-            <span className="hero__big">Your Name</span>
+            <span className="hero__big">Samuel Pimentel</span>
           </h1>
           <p className="hero__role reveal">
             <span className="typed">{typedText}</span>
@@ -216,6 +225,7 @@ function App() {
         </div>
       </section>
 
+      {/* About section */}
       <section className="about section" id="about">
         <div className="container">
           <div className="section-label">/ About Me</div>
@@ -237,7 +247,7 @@ function App() {
                 <a href="#" className="btn btn--primary">
                   Download Resume
                 </a>
-                <a href="https://github.com/yourusername" className="btn btn--ghost" target="_blank" rel="noreferrer">
+                <a href="https://github.com/mericot" className="btn btn--ghost" target="_blank" rel="noreferrer">
                   GitHub ↗
                 </a>
               </div>
@@ -264,6 +274,7 @@ function App() {
         </div>
       </section>
 
+      {/* Work/projects section rendered from PROJECTS data */}
       <section className="work section" id="work">
         <div className="container">
           <div className="section-label">/ Selected Work</div>
@@ -298,13 +309,14 @@ function App() {
             ))}
           </div>
           <div className="work__more reveal-up">
-            <a href="https://github.com/yourusername" target="_blank" rel="noreferrer" className="btn btn--ghost">
+            <a href="https://github.com/mericot" target="_blank" rel="noreferrer" className="btn btn--ghost">
               See all on GitHub ↗
             </a>
           </div>
         </div>
       </section>
 
+      {/* Skills section rendered from SKILLS data */}
       <section className="skills section" id="skills">
         <div className="container">
           <div className="section-label">/ Tech Stack</div>
@@ -320,6 +332,7 @@ function App() {
         </div>
       </section>
 
+      {/* Contact section with controlled React form */}
       <section className="contact section" id="contact">
         <div className="container">
           <div className="section-label">/ Contact</div>
@@ -383,6 +396,7 @@ function App() {
         </div>
       </section>
 
+      {/* Footer */}
       <footer className="footer">
         <div className="container">
           <div className="footer__top">
@@ -390,7 +404,7 @@ function App() {
               YN<span className="dot">.</span>
             </a>
             <div className="footer__socials">
-              <a href="https://github.com/yourusername" target="_blank" rel="noreferrer" aria-label="GitHub">
+              <a href="https://github.com/mericot" target="_blank" rel="noreferrer" aria-label="GitHub">
                 GH
               </a>
               <a href="https://linkedin.com/in/yourusername" target="_blank" rel="noreferrer" aria-label="LinkedIn">

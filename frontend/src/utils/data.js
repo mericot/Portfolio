@@ -1,3 +1,5 @@
+// Content source for the UI.
+// Update this file to change projects, skills, and typed hero strings.
 export const PROJECTS = [
   {
     emoji: '🚀',
