@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { PROJECTS, SKILLS, TYPED_STRINGS } from './utils/data';
+import resumePdf from '../assets/Resume.pdf';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 const FIELD_LIMITS = {
@@ -309,7 +310,7 @@ function App() {
                 source, or making espresso with way too much care.
               </p>
               <div className="about__links reveal-up">
-                <a href="#" className="btn btn--primary">
+                <a href={resumePdf} download="Samuel-Pimentel-Resume.pdf" className="btn btn--primary">
                   Download Resume
                 </a>
                 <a href="https://github.com/mericot" className="btn btn--ghost" target="_blank" rel="noreferrer">
