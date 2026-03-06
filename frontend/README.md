@@ -22,6 +22,22 @@ npm run build
 
 Production output is generated in `frontend/dist`.
 
+## Backend API Configuration
+The contact form posts to `/api/contact`.
+
+- Local dev: leave `VITE_API_BASE_URL` empty and use the Vite proxy (already configured to `http://localhost:8080`).
+- Production: set `VITE_API_BASE_URL` to your backend base URL.
+
+Example:
+```bash
+cp .env.example .env
+```
+
+Then set:
+```bash
+VITE_API_BASE_URL=https://your-backend-domain.com
+```
+
 ## Project Layout
 - `index.html` - page shell and root mount node
 - `src/main.jsx` - React bootstrap entry

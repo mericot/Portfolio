@@ -1,12 +1,39 @@
 import { useEffect, useState } from 'react';
 import { PROJECTS, SKILLS, TYPED_STRINGS } from './utils/data';
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+const FIELD_LIMITS = {
+  subject: 120,
+  message: 500,
+};
+
+const validateContactFields = ({ name, email, subject, message }) => {
+  const errors = {};
+
+  if (!name) errors.name = 'Name is required.';
+  if (!email) errors.email = 'Email is required.';
+  if (!subject) errors.subject = 'Subject is required.';
+  if (!message) errors.message = 'Message is required.';
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.email = 'Please enter a valid email address.';
+  }
+  if (subject && subject.length > FIELD_LIMITS.subject) {
+    errors.subject = `Subject must be at most ${FIELD_LIMITS.subject} characters.`;
+  }
+  if (message && message.length > FIELD_LIMITS.message) {
+    errors.message = `Message must be at most ${FIELD_LIMITS.message} characters.`;
+  }
+
+  return errors;
+};
+
 function App() {
   // UI state for navbar style, mobile menu, hero typing text, and form behavior.
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [typedText, setTypedText] = useState('');
   const [formStatus, setFormStatus] = useState({ type: '', message: '' });
+  const [fieldErrors, setFieldErrors] = useState({});
   const [isSending, setIsSending] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -14,6 +41,14 @@ function App() {
     subject: '',
     message: '',
   });
+  const hasValidationErrors = Object.keys(
+    validateContactFields({
+      name: formData.name.trim(),
+      email: formData.email.trim(),
+      subject: formData.subject.trim(),
+      message: formData.message.trim(),
+    })
+  ).length > 0;
 
   // Toggle "scrolled" navbar style once the page is past 40px.
   useEffect(() => {
@@ -92,43 +127,73 @@ function App() {
   const handleInputChange = (event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => ({ ...prev, [name]: '' }));
+    if (formStatus.type === 'error') {
+      setFormStatus({ type: '', message: '' });
+    }
   };
 
-  // Basic submit flow: validate -> simulate request -> show success message.
+  // Submit flow: validate -> send request to backend -> show success/error state.
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const name = formData.name.trim();
-    const email = formData.email.trim();
-    const message = formData.message.trim();
+    const payload = {
+      name: formData.name.trim(),
+      email: formData.email.trim(),
+      subject: formData.subject.trim(),
+      message: formData.message.trim(),
+    };
 
-    if (!name || !email || !message) {
+    const validationErrors = validateContactFields(payload);
+    if (Object.keys(validationErrors).length) {
+      setFieldErrors(validationErrors);
       setFormStatus({
         type: 'error',
-        message: 'Please fill in all required fields.',
-      });
-      return;
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setFormStatus({
-        type: 'error',
-        message: 'Please enter a valid email address.',
+        message: 'Please fix the highlighted fields.',
       });
       return;
     }
 
     setIsSending(true);
+    setFieldErrors({});
     setFormStatus({ type: '', message: '' });
 
-    await new Promise((resolve) => window.setTimeout(resolve, 1200));
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
 
-    setFormStatus({
-      type: 'success',
-      message: "Message sent! I'll get back to you soon.",
-    });
-    setFormData({ name: '', email: '', subject: '', message: '' });
-    setIsSending(false);
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        if (data?.errors && typeof data.errors === 'object') {
+          setFieldErrors(data.errors);
+        }
+        const errorMessage =
+          (data?.errors ? Object.values(data.errors).join(' ') : '') ||
+          data?.message ||
+          'Failed to send message. Please try again.';
+        throw new Error(errorMessage);
+      }
+
+      setFormStatus({
+        type: 'success',
+        message: "Message sent! I'll get back to you soon.",
+      });
+      setFieldErrors({});
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch (error) {
+      setFormStatus({
+        type: 'error',
+        message: error.message || 'Failed to send message. Please try again.',
+      });
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -349,8 +414,15 @@ function App() {
                   placeholder="Jane Smith"
                   value={formData.name}
                   onChange={handleInputChange}
+                  aria-invalid={Boolean(fieldErrors.name)}
+                  aria-describedby={fieldErrors.name ? 'name-error' : undefined}
                   required
                 />
+                {fieldErrors.name ? (
+                  <div id="name-error" className="form__field-error">
+                    {fieldErrors.name}
+                  </div>
+                ) : null}
               </div>
               <div className="form-group">
                 <label htmlFor="email">Email</label>
@@ -361,8 +433,15 @@ function App() {
                   placeholder="jane@example.com"
                   value={formData.email}
                   onChange={handleInputChange}
+                  aria-invalid={Boolean(fieldErrors.email)}
+                  aria-describedby={fieldErrors.email ? 'email-error' : undefined}
                   required
                 />
+                {fieldErrors.email ? (
+                  <div id="email-error" className="form__field-error">
+                    {fieldErrors.email}
+                  </div>
+                ) : null}
               </div>
             </div>
             <div className="form-group">
@@ -374,7 +453,19 @@ function App() {
                 placeholder="Project inquiry"
                 value={formData.subject}
                 onChange={handleInputChange}
+                maxLength={FIELD_LIMITS.subject}
+                aria-invalid={Boolean(fieldErrors.subject)}
+                aria-describedby={fieldErrors.subject ? 'subject-error' : 'subject-meta'}
+                required
               />
+              <div className="form__field-meta" id="subject-meta">
+                {formData.subject.length}/{FIELD_LIMITS.subject}
+              </div>
+              {fieldErrors.subject ? (
+                <div id="subject-error" className="form__field-error">
+                  {fieldErrors.subject}
+                </div>
+              ) : null}
             </div>
             <div className="form-group">
               <label htmlFor="message">Message</label>
@@ -385,13 +476,31 @@ function App() {
                 placeholder="Tell me about your project..."
                 value={formData.message}
                 onChange={handleInputChange}
+                maxLength={FIELD_LIMITS.message}
+                aria-invalid={Boolean(fieldErrors.message)}
+                aria-describedby={fieldErrors.message ? 'message-error' : 'message-meta'}
                 required
               ></textarea>
+              <div className="form__field-meta" id="message-meta">
+                {formData.message.length}/{FIELD_LIMITS.message}
+              </div>
+              {fieldErrors.message ? (
+                <div id="message-error" className="form__field-error">
+                  {fieldErrors.message}
+                </div>
+              ) : null}
             </div>
-            <button type="submit" className="btn btn--primary" disabled={isSending}>
+            <button
+              type="submit"
+              className="btn btn--primary"
+              disabled={isSending || hasValidationErrors}
+              aria-busy={isSending}
+            >
               {isSending ? 'Sending...' : 'Send Message ↗'}
             </button>
-            <div className={`form__status ${formStatus.type}`}>{formStatus.message}</div>
+            <div className={`form__status ${formStatus.type}`} role="status" aria-live="polite">
+              {formStatus.message}
+            </div>
           </form>
         </div>
       </section>
